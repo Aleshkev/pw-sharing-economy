@@ -24,23 +24,15 @@ public class Werkstatt implements Workshop {
 
   @Override
   public Workplace enter(WorkplaceId workplaceId) {
-    try {
-      acquireWorkplace(workplaceId);
-      return workplaces.get(workplaceId);
-    } catch (InterruptedException e) {
-      throw new RuntimeException("panic: unexpected thread interruption");
-    }
+    acquireWorkplace(workplaceId);
+    return workplaces.get(workplaceId);
   }
 
   @Override
   public Workplace switchTo(WorkplaceId workplaceId) {
-    try {
-      releaseCurrentWorkplace();
-      acquireWorkplace(workplaceId);
-      return workplaces.get(workplaceId);
-    } catch (InterruptedException e) {
-      throw new RuntimeException("panic: unexpected thread interruption");
-    }
+    releaseCurrentWorkplace();
+    acquireWorkplace(workplaceId);
+    return workplaces.get(workplaceId);
   }
 
   @Override
@@ -48,8 +40,13 @@ public class Werkstatt implements Workshop {
     releaseCurrentWorkplace();
   }
 
-  private void acquireWorkplace(WorkplaceId workplaceId) throws InterruptedException {
-    semaphoreOfWorkplace.get(workplaceId).acquire();
+  private void acquireWorkplace(WorkplaceId workplaceId) {
+    var semaphore = semaphoreOfWorkplace.get(workplaceId);
+    try {
+      semaphore.acquire();
+    } catch (InterruptedException e) {
+      throw new RuntimeException("panic: unexpected thread interruption");
+    }
     currentWorkplaceOfThread.put(getThreadId(), workplaceId);
   }
 
