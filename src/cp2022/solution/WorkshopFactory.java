@@ -7,17 +7,16 @@
  */
 package cp2022.solution;
 
-import java.util.Collection;
-
 import cp2022.base.Workplace;
 import cp2022.base.Workshop;
+
+import java.util.Collection;
 
 
 public final class WorkshopFactory {
 
-    public static Workshop newWorkshop(Collection<Workplace> workplaces) {
-        // FIXME: implement
-        throw new RuntimeException("not implemented");
-    }
+  public static Workshop newWorkshop(Collection<Workplace> workplaces) {
+    return new Werkstatt(workplaces);
+  }
 
 }
