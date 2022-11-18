@@ -6,32 +6,48 @@ import cp2022.base.Workshop;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 
 public class Werkstatt implements Workshop {
 
-  final Map<WorkplaceId, Workplace> workplaces;  // Immutable.
-  final Map<WorkplaceId, Semaphore> semaphoreOfWorkplace;  // Immutable.
-  final Map<Long, WorkplaceId> currentWorkplaceOfThread;  // Concurrent.
+  // All fields are async-friendly.
+  private final Map<WorkplaceId, Workplace> workplaces;  // Immutable.
+  private final Map<WorkplaceId, Semaphore> waitForWorkplace;  // Immutable.
+  private final Doorman waitBeforeEntering = new Doorman();  // A monitor.
+  private final ThreadLocal<WorkplaceId> currentWorkplace = new ThreadLocal<>();
 
   public Werkstatt(Collection<Workplace> workplaces) {
     this.workplaces = workplaces.stream().collect(Collectors.toUnmodifiableMap(Workplace::getId, x -> x));
-    this.semaphoreOfWorkplace = workplaces.stream().collect(Collectors.toUnmodifiableMap(Workplace::getId, x -> new Semaphore(1, true)));
-    this.currentWorkplaceOfThread = new ConcurrentHashMap<>();
+    this.waitForWorkplace = workplaces.stream().collect(Collectors.toUnmodifiableMap(Workplace::getId, x -> new Semaphore(1, true)));
+  }
+
+  private RuntimeException getFavoriteException() {
+    return new RuntimeException("panic: unexpected thread interruption");
   }
 
   @Override
   public Workplace enter(WorkplaceId workplaceId) {
+    try {
+      waitBeforeEntering.awaitSlot();
+    } catch (InterruptedException e) {
+      throw getFavoriteException();
+    }
+
     acquireWorkplace(workplaceId);
+
     return workplaces.get(workplaceId);
   }
 
   @Override
   public Workplace switchTo(WorkplaceId workplaceId) {
+
     releaseCurrentWorkplace();
+
+    waitBeforeEntering.limitSlots(2 * workplaces.size() - 1);
     acquireWorkplace(workplaceId);
+    waitBeforeEntering.unlimitSlots();
+
     return workplaces.get(workplaceId);
   }
 
@@ -41,22 +57,25 @@ public class Werkstatt implements Workshop {
   }
 
   private void acquireWorkplace(WorkplaceId workplaceId) {
-    var semaphore = semaphoreOfWorkplace.get(workplaceId);
+    assert currentWorkplace.get() == null;
+
+    // Wait in the queue.
+    var semaphore = waitForWorkplace.get(workplaceId);
     try {
       semaphore.acquire();
     } catch (InterruptedException e) {
-      throw new RuntimeException("panic: unexpected thread interruption");
+      throw getFavoriteException();
     }
-    currentWorkplaceOfThread.put(getThreadId(), workplaceId);
+
+    currentWorkplace.set(workplaceId);
   }
 
   private void releaseCurrentWorkplace() {
-    var semaphore = semaphoreOfWorkplace.get(currentWorkplaceOfThread.get(getThreadId()));
-    semaphore.release();
-    currentWorkplaceOfThread.remove(getThreadId());
-  }
+    assert currentWorkplace.get() != null;
 
-  private long getThreadId() {
-    return Thread.currentThread().getId();
+    // Free the workplace.
+    var semaphore = waitForWorkplace.get(currentWorkplace.get());
+    semaphore.release();
+    currentWorkplace.set(null);
   }
 }
