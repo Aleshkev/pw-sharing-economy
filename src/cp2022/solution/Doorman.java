@@ -53,13 +53,15 @@ class Doorman {
 
   // Remove the limit placed by the current thread.
   public void unlimitSlots() {
+    if (!hasLimitBeenSet.get())
+      throw new IllegalStateException("There is no limit set by the current thread");
+    hasLimitBeenSet.set(false);
+    assert whereToDecrease.get() != null;
+
     lock.lock();
     try {
-      if (!hasLimitBeenSet.get())
-        throw new IllegalStateException("There is no limit set by the current thread");
-      hasLimitBeenSet.set(false);
-
       availabilities.merge(whereToDecrease.get(), -1, (a, b) -> (a == 1 ? null : b));
+      whereToDecrease.set(null);
 
       slotAvailable.signal();
     } finally {

@@ -9,13 +9,14 @@ import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 
+// Names of implementations of interfaces are in German.
 public class Werkstatt implements Workshop {
 
   // All fields are async-friendly.
   private final Map<WorkplaceId, Workplace> workplaces;  // Immutable.
   private final Map<WorkplaceId, Semaphore> waitForWorkplace;  // Immutable.
-  private final Doorman waitBeforeEntering = new Doorman();  // A monitor.
-  private final ThreadLocal<WorkplaceId> currentWorkplace = new ThreadLocal<>();
+  private final Doorman doorman = new Doorman();  // A monitor.
+  private final ThreadLocal<WorkplaceId> currentWorkplace = new ThreadLocal<>();  // Local.
 
   public Werkstatt(Collection<Workplace> workplaces) {
     this.workplaces = workplaces.stream().collect(Collectors.toUnmodifiableMap(Workplace::getId, x -> x));
@@ -28,8 +29,9 @@ public class Werkstatt implements Workshop {
 
   @Override
   public Workplace enter(WorkplaceId workplaceId) {
+    // Wait in a queue until everybody is ok with us entering the workshop.
     try {
-      waitBeforeEntering.awaitSlot();
+      doorman.awaitSlot();
     } catch (InterruptedException e) {
       throw getFavoriteException();
     }
@@ -41,12 +43,12 @@ public class Werkstatt implements Workshop {
 
   @Override
   public Workplace switchTo(WorkplaceId workplaceId) {
-
     releaseCurrentWorkplace();
 
-    waitBeforeEntering.limitSlots(2 * workplaces.size() - 1);
+    // Ensure that fewer than 2N people can enter before we get to the workplace.
+    doorman.limitSlots(2 * workplaces.size() - 1);
     acquireWorkplace(workplaceId);
-    waitBeforeEntering.unlimitSlots();
+    doorman.unlimitSlots();
 
     return workplaces.get(workplaceId);
   }
@@ -56,10 +58,10 @@ public class Werkstatt implements Workshop {
     releaseCurrentWorkplace();
   }
 
+  // Wait in the queue for the workplace to become available.
   private void acquireWorkplace(WorkplaceId workplaceId) {
     assert currentWorkplace.get() == null;
 
-    // Wait in the queue.
     var semaphore = waitForWorkplace.get(workplaceId);
     try {
       semaphore.acquire();
@@ -70,10 +72,10 @@ public class Werkstatt implements Workshop {
     currentWorkplace.set(workplaceId);
   }
 
+  // Free the workplace.
   private void releaseCurrentWorkplace() {
     assert currentWorkplace.get() != null;
 
-    // Free the workplace.
     var semaphore = waitForWorkplace.get(currentWorkplace.get());
     semaphore.release();
     currentWorkplace.set(null);
