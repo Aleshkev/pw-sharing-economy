@@ -9,75 +9,73 @@ import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 
+
 // Names of implementations of interfaces are in German.
 public class Werkstatt implements Workshop {
-
   // All fields are async-friendly.
   private final Map<WorkplaceId, Workplace> workplaces;  // Immutable.
-  private final Map<WorkplaceId, Semaphore> waitForWorkplace;  // Immutable.
-  private final Doorman doorman = new Doorman();  // A monitor.
+  private final Map<WorkplaceId, Semaphore> waitToMove;  // Immutable.
+  private final Map<WorkplaceId, Semaphore> waitToWork;  // Immutable.
+  private final Semaphore waitToEnterTheWorkshop;
+  //  private final Doorman doorman = new Doorman();  // A monitor.
   private final ThreadLocal<WorkplaceId> currentWorkplace = new ThreadLocal<>();  // Local.
 
   public Werkstatt(Collection<Workplace> workplaces) {
     this.workplaces = workplaces.stream().collect(Collectors.toUnmodifiableMap(Workplace::getId, x -> x));
-    this.waitForWorkplace = workplaces.stream().collect(Collectors.toUnmodifiableMap(Workplace::getId, x -> new Semaphore(1, true)));
+    this.waitToMove = workplaces.stream().collect(Collectors.toUnmodifiableMap(Workplace::getId, x -> new Semaphore(1, true)));
+    this.waitToWork = workplaces.stream().collect(Collectors.toUnmodifiableMap(Workplace::getId, x -> new Semaphore(1, true)));
+    this.waitToEnterTheWorkshop = new Semaphore(2 * workplaces.size() - 1);
   }
 
-  private RuntimeException getFavoriteException() {
-    return new RuntimeException("panic: unexpected thread interruption");
-  }
-
-  @Override
-  public Workplace enter(WorkplaceId workplaceId) {
-    // Wait in a queue until everybody is ok with us entering the workshop.
+  private void catchInterrupts(InterruptableAction f) {
     try {
-      doorman.awaitSlot();
+      f.run();
     } catch (InterruptedException e) {
-      throw getFavoriteException();
+      throw new RuntimeException("panic: unexpected thread interruption");
     }
-
-    acquireWorkplace(workplaceId);
-
-    return workplaces.get(workplaceId);
   }
 
   @Override
-  public Workplace switchTo(WorkplaceId workplaceId) {
-    releaseCurrentWorkplace();
+  public Workplace enter(WorkplaceId newWorkplace) {
+    catchInterrupts(() -> waitToEnterTheWorkshop.acquire());
 
-    // Ensure that fewer than 2N people can enter before we get to the workplace.
-    doorman.limitSlots(2 * workplaces.size() - 1);
-    acquireWorkplace(workplaceId);
-    doorman.unlimitSlots();
+    catchInterrupts(() -> waitToMove.get(newWorkplace).acquire());
+    catchInterrupts(() -> waitToWork.get(newWorkplace).acquire());
+    currentWorkplace.set(newWorkplace);
 
-    return workplaces.get(workplaceId);
+    return workplaces.get(newWorkplace);
+  }
+
+  @Override
+  public Workplace switchTo(WorkplaceId newWorkplace) {
+    WorkplaceId oldWorkplace = currentWorkplace.get();
+
+    if(oldWorkplace == newWorkplace) return workplaces.get(newWorkplace);
+
+    waitToMove.get(oldWorkplace).release();
+
+    catchInterrupts(() -> waitToMove.get(newWorkplace).acquire());
+    currentWorkplace.set(newWorkplace);
+
+    Runnable delayedActions = () -> {
+      waitToWork.get(oldWorkplace).release();
+      catchInterrupts(() -> waitToWork.get(newWorkplace).acquire());
+    };
+
+    return new WorkplaceWrapper(workplaces.get(newWorkplace), delayedActions, null);
   }
 
   @Override
   public void leave() {
-    releaseCurrentWorkplace();
-  }
-
-  // Wait in the queue for the workplace to become available.
-  private void acquireWorkplace(WorkplaceId workplaceId) {
-    assert currentWorkplace.get() == null;
-
-    var semaphore = waitForWorkplace.get(workplaceId);
-    try {
-      semaphore.acquire();
-    } catch (InterruptedException e) {
-      throw getFavoriteException();
-    }
-
-    currentWorkplace.set(workplaceId);
-  }
-
-  // Free the workplace.
-  private void releaseCurrentWorkplace() {
-    assert currentWorkplace.get() != null;
-
-    var semaphore = waitForWorkplace.get(currentWorkplace.get());
-    semaphore.release();
+    WorkplaceId oldWorkplace = currentWorkplace.get();
+    waitToMove.get(oldWorkplace).release();
+    waitToWork.get(oldWorkplace).release();
     currentWorkplace.set(null);
+
+    waitToEnterTheWorkshop.release();
+  }
+
+  private interface InterruptableAction {
+    void run() throws InterruptedException;
   }
 }
