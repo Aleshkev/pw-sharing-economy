@@ -16,7 +16,8 @@ import java.util.Collection;
 public final class WorkshopFactory {
 
   public static Workshop newWorkshop(Collection<Workplace> workplaces) {
-    return new Werkstatt(workplaces);
+    return new WorkshopVisualizer(new WorkshopImpl(workplaces));
+//    return new WorkshopImpl(workplaces);
   }
 
 }
