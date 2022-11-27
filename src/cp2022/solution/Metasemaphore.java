@@ -7,14 +7,15 @@ import java.util.concurrent.locks.ReentrantLock;
 // Doesn't let too many people in. The number of yet available slots can be limited in each thread,
 // and the limit can be lifted in the same thread.
 class Metasemaphore {
-  private final ReentrantLock lock = new ReentrantLock(true);
-  private final Condition anyAvailable = lock.newCondition();
+  private final Condition anyAvailable;
+//  = lock.newCondition();
   private final HashMap<Integer, Integer> permits = new HashMap<>();
   ThreadLocal<Integer> lastLimit = new ThreadLocal<>();
   boolean verbose = false;
   private int time = 1;
 
-  public Metasemaphore() {
+  public Metasemaphore(XWorkshop workshop) {
+    anyAvailable = workshop.getLock().newCondition();
   }
 
   private Long getThreadId() {
@@ -28,7 +29,7 @@ class Metasemaphore {
     if (lastLimit.get() != null)
       throw new IllegalStateException("The thread was already waiting");
 
-    lock.lock();
+//    lock.lock();
     try {
       Log.info(this, "startWaiting/begin");
 
@@ -38,7 +39,7 @@ class Metasemaphore {
 
       Log.info(this, "startWaiting/end");
     } finally {
-      lock.unlock();
+//      lock.unlock();
     }
   }
 
@@ -46,7 +47,7 @@ class Metasemaphore {
     if (lastLimit.get() == null)
       throw new IllegalStateException("A thread must be waiting to acquire a permit");
 
-    lock.lock();
+//    lock.lock();
     try {
       Log.info(this, "acquirePermit/begin");
 
@@ -61,7 +62,7 @@ class Metasemaphore {
 
       Log.info(this, "acquirePermit/end");
     } finally {
-      lock.unlock();
+//      lock.unlock();
     }
   }
 
@@ -69,7 +70,7 @@ class Metasemaphore {
     if (lastLimit.get() == null)
       throw new IllegalStateException("The thread was not waiting");
 
-    lock.lock();
+//    lock.lock();
     try {
       Log.info(this, "stopWaiting/begin");
 
@@ -80,24 +81,24 @@ class Metasemaphore {
 
       Log.info(this, "stopWaiting/end");
     } finally {
-      lock.unlock();
+//      lock.unlock();
     }
   }
 
   private boolean isSlotAvailable(int time) {
-    assert lock.isLocked();
+//    assert lock.isLocked();
     return permits.entrySet().stream().filter(entry -> entry.getKey() < time).allMatch(entry -> entry.getValue() > 0);
   }
 
   @Override
   public String toString() {
-    lock.lock();
+//    lock.lock();
     try {
       return "Metasemaphore{...}";
 //      return "Doorman{" +
 //              "permits=" + permits + ", thread=" + getThreadId() + ", " + lastLimit.get() + "}";
     } finally {
-      lock.unlock();
+//      lock.unlock();
     }
   }
 }

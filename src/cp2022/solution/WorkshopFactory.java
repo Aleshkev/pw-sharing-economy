@@ -16,8 +16,10 @@ import java.util.Collection;
 public final class WorkshopFactory {
 
   public static Workshop newWorkshop(Collection<Workplace> workplaces) {
-    return new WorkshopVisualizer(new WorkshopImpl(workplaces));
-//    return new WorkshopImpl(workplaces);
+    if (Log.printingEnabled)
+      return new WorkshopVisualizer(new XWorkshop(workplaces));
+    else
+      return new XWorkshop(workplaces);
   }
 
 }
