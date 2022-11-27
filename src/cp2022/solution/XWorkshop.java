@@ -52,6 +52,7 @@ public class XWorkshop implements Workshop {
     catchInterrupts(() -> metasemaphore.acquirePermit());
 
     Log.info(worker, "enter.acquireMovePermit", newWorkplace);
+    worker.setAwaitedWorkplace(newWorkplace);
     catchInterrupts(() -> newWorkplace.acquireMovePermit(worker));
     worker.setCurrentWorkplace(newWorkplace);
 
@@ -62,6 +63,7 @@ public class XWorkshop implements Workshop {
 
       Log.info(worker, "enter-delayed.acquireUsePermit", newWorkplace);
       catchInterrupts(() -> newWorkplace.acquireUsePermit(worker));
+      worker.setAwaitedWorkplace(null);
 
       Log.info(worker, "enter-delayed.end", newWorkplace);
       lock.unlock();
@@ -72,10 +74,10 @@ public class XWorkshop implements Workshop {
   public Workplace switchTo(WorkplaceId newWorkplaceId) {
     lock.lock();
 
-    Log.info(workers, "switchTo.begin", newWorkplaceId);
     var worker = workers.get(getWorkerId());
     var oldWorkplace = worker.getCurrentWorkplace();
     var newWorkplace = workplaces.get(newWorkplaceId);
+    Log.info(worker, "switchTo.begin", newWorkplaceId);
 
     if (oldWorkplace == newWorkplace) {
       lock.unlock();
@@ -87,6 +89,7 @@ public class XWorkshop implements Workshop {
     metasemaphore.startWaiting(2 * workplaces.size() - 1);
 
     Log.info(worker, "enter.begin.acquireMovePermit", newWorkplace);
+    worker.setAwaitedWorkplace(newWorkplace);
     catchInterrupts(() -> newWorkplace.acquireMovePermit(worker));
     worker.setCurrentWorkplace(newWorkplace);
 
@@ -99,6 +102,7 @@ public class XWorkshop implements Workshop {
 
       Log.info(worker, "switchTo-delayed.acquireWorkPermit");
       catchInterrupts(() -> newWorkplace.acquireUsePermit(worker));
+      worker.setAwaitedWorkplace(null);
 
       Log.info(worker, "switchTo-delayed.end");
       lock.unlock();
