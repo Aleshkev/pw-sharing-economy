@@ -18,25 +18,24 @@ class Metasemaphore {
   // the thread.
   public void startWaiting(XWorker worker, int n) {
     if (n <= 0) {
-      throw new IllegalArgumentException("Invalid limit on limits");
+      throw new IllegalArgumentException("Invalid limit");
     }
     if (timeOfLimit.get(worker) != null) {
       throw new IllegalStateException("The worker was already waiting");
     }
 
-    Log.info(this, "startWaiting/begin");
+    Log.info(this, "startWaiting.begin");
 
     timeOfLimit.put(worker, time);
     limits.put(time, n);
     ++time;
 
-    Log.info(this, "startWaiting/end");
+    Log.info(this, "startWaiting.end");
   }
 
   public void acquirePermit(XWorker worker) throws InterruptedException {
     if (timeOfLimit.get(worker) == null) {
-      throw new IllegalStateException("A thread must be waiting to acquire a "
-                                              + "permit");
+      throw new IllegalStateException("A thread must be waiting to acquire a permit");
     }
 
     Log.info(this, "acquirePermit/begin");
@@ -51,7 +50,7 @@ class Metasemaphore {
     waitingToAcquire.remove(worker);
     limits.replaceAll((a, b) -> a < timeOfLimit.get(worker) ? b - 1 : b);
 
-    Log.info(this, "acquirePermit/end");
+    Log.info(this, "acquirePermit.end");
   }
 
   public void stopWaiting(XWorker worker) {
@@ -59,7 +58,7 @@ class Metasemaphore {
       throw new IllegalStateException("The worker was not waiting");
     }
 
-    Log.info(this, "stopWaiting/begin");
+    Log.info(this, "stopWaiting.begin");
 
     limits.remove(timeOfLimit.get(worker));
     timeOfLimit.remove(worker);
@@ -69,7 +68,7 @@ class Metasemaphore {
       waitingToAcquire.get(0).wakeup.signal();
     }
 
-    Log.info(this, "stopWaiting/end");
+    Log.info(this, "stopWaiting.end");
   }
 
   private boolean canAcquirePermit(int whenStartedWaiting) {
@@ -77,8 +76,8 @@ class Metasemaphore {
   }
 
   private String getWaiting() {
-    var waiting =
-            timeOfLimit.entrySet().stream().map(entry -> Map.entry(entry.getKey(), limits.get(entry.getValue()))).collect(Collectors.toSet());
+    var waiting = timeOfLimit.entrySet().stream().map(entry -> Map.entry(entry.getKey(),
+                                                                         limits.get(entry.getValue()))).collect(Collectors.toSet());
     return waiting.toString().replace("=", ": ");
   }
 
@@ -88,7 +87,7 @@ class Metasemaphore {
   }
 
   public String getDetailedString() {
-    return (Log.PURPLE + "metasemaphore" + "\n") + (Log.PURPLE + "  limits = "
-            + getWaiting() + "\n") + (Log.PURPLE + "  waiting to acquire = " + waitingToAcquire + "\n");
+    return (Log.PURPLE + "metasemaphore" + "\n") + (Log.PURPLE + "  limits = " + getWaiting() +
+            "\n") + (Log.PURPLE + "  waiting to acquire = " + waitingToAcquire + "\n");
   }
 }
