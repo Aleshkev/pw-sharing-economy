@@ -1,0 +1,208 @@
+Running tests.
+Parameter verbose = 0. It can be changed in the code of the tests to print the logs.
+Tests add some operations after and before switch, enter and leave. Since we are unable to detectwhen this functions start and finish – all tests should be passed.
+If test has 'starvation' in name it will be slow due to test architecture.
+Tests add something to the
+
+Test TestSimpleOneWorkplace (author's time on students 421ms.)
+
+PASSED in 434ms
+
+Test TestSimpleQueue (author's time on students 1288ms.)
+
+PASSED in 1263ms
+
+Test TestSimpleOneUse (author's time on students 102ms.)
+
+PASSED in 103ms
+
+Test TestSimpleOneUseRepeated (author's time on students 505ms.)
+
+PASSED in 504ms
+
+Test TestSimpleSwitchRepeated (author's time on students 3014ms.)
+
+PASSED in 3531ms
+
+Test TestSimpleSwitchAndUse (author's time on students 610ms.)
+
+PASSED in 807ms
+
+Test TestSimpleQueueInsideAndUse (author's time on students 204ms.)
+
+PASSED in 609ms
+
+Test TestSimpleOneStaysOneMoves (author's time on students 352ms.)
+
+PASSED in 255ms
+
+Test TestSimpleOneWorkplaceManyTimes
+PASSED in 1038ms
+
+Test TestSimpleTwoQueues
+PASSED in 1645ms
+
+Test TestDeadlockPair (author's time on students 204ms.)
+
+PASSED in 340ms
+
+Test TestDeadlockPairManyTimes (author's time on students 8992ms.)
+
+PASSED in 6963ms
+
+Test TestDeadlockTriCycle (author's time on students 206ms.)
+
+PASSED in 409ms
+
+Test TestDeadlockTriCycleManyTimes (author's time on students 10ms.)
+
+PASSED in 10ms
+
+Test TestDeadlockOneBigOneSmallCycleWithCommonVertex (author's time on students 134ms.)
+
+PASSED in 130ms
+
+Test TestStarvationTricycleAndQueue (author's time on students 34101ms.)
+
+PASSED in 34234ms
+
+Test TestStarvationOneLongQueue (author's time on students 14129ms.)
+
+PASSED in 14270ms
+
+Test TestStarvationStar (author's time on students 20236ms.)
+
+PASSED in 19594ms
+
+Test TestStarvationManyQueues (author's time on students 15991ms.)
+
+PASSED in 15530ms
+
+Test TestStarvationBigStar (author's time on students 9245ms.)
+
+PASSED in 9323ms
+
+Test TestEfficiencyParallel (author's time on students 501ms.)
+
+Time limit = 1000ms
+PASSED in 503ms
+
+Test TestEfficiencyCycle (author's time on students 4232ms.)
+
+Time limit = 7000ms
+PASSED in 4327ms
+
+Test TestBigRandomRotations (author's time on students 204ms.)
+
+PASSED in 182ms
+
+Test TestBigRandom1 (author's time on students 24450ms.)
+
+PASSED in 25508ms
+
+Test TestBigRandom2 (author's time on students 21196ms.)
+
+PASSED in 22301ms
+
+Test TestBigRandom3 (author's time on students 1957ms.)
+
+PASSED in 1549ms
+
+Test TestBigRandom4 (author's time on students 1075ms.)
+
+PASSED in 700ms
+
+Test TestBigRandom5 (author's time on students 12208ms.)
+
+PASSED in 6297ms
+
+Test TestBigRandom6 (author's time on students 16509ms.)
+
+PASSED in 18972ms
+
+Test TestBigRandomStarvation (author's time on students 61046ms.)
+
+PASSED in 61829ms
+
+Test TestBigRandom7 (author's time on students 4598ms.)
+
+PASSED in 4410ms
+
+Test TestBigRandomStarvation2 (author's time on students 61320ms.)
+
+PASSED in 61755ms
+
+Test TestEfficiencyBigRandom
+Time limit = 10000ms
+PASSED in 5068ms
+
+Test TestEfficiencyOrderErrorCatch (author's time on students 10462ms.)
+
+Time limit = 15000ms
+PASSED in 11527ms
+
+
+Running test: KwasowPairCycleTest
+
+Running test: KwasowBigCycleTest
+
+Running test: KwasowSwitchToSameWorkplaceTest
+
+ATTENTION:
+These tests don't check for starvation!
+
+Running fibonacci test: OneWorkerCorrectSwitchingTest (329ms on students):
+
+Test completed in 426ms
+
+Running fibonacci test: ManyWorkersOneGapTest (626ms on students):
+
+Test completed in 895ms
+
+Running fibonacci test: ConcurrencyTest (2074ms on students):
+
+Test completed in 2014ms
+
+Running fibonacci test: TwoWorkersOppositeTest (21ms on students):
+
+Test completed in 14ms
+
+Running fibonacci test: TwoWorkersOppositeManyTimesTest (1341ms on students):
+
+Test completed in 1343ms
+
+Running fibonacci test: CycleTest (560ms on students):
+
+Test completed in 1085ms
+
+Running fibonacci test: CycleManyTimesTest (5544ms on students):
+
+Test completed in 11361ms
+
+Running fibonacci test: WorkerStayingTest (818ms on students):
+
+Test completed in 846ms
+
+Running fibonacci test: DeadlockTwoGroupsTest (366ms on students):
+
+Test completed in 663ms
+
+Running fibonacci test: DeadlockTwoGroupsManyTimesTest (3349ms on students):
+
+Test completed in 3400ms
+
+Running fibonacci test: DeadlockTreeTest (8382ms on students):
+
+Test completed in 11588ms
+
+Running fibonacci test: ManyWorkersChaosTest (8855ms on students):
+
+Test completed in 17464ms
+
+Running fibonacci test: RandomTest (23700ms on students):
+
+Test completed in 37079ms
+
+Running fibonacci test: AllPermutationsTest (9276ms on students):
+
+Test completed in 12704ms
