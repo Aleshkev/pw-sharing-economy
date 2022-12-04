@@ -30,9 +30,7 @@ public class BinarySemaphore {
   }
 
   public void release(XWorker oldOwner) {
-//    if (oldOwner != owner) {
-//      throw new IllegalStateException(this + ": Permit owned by " + owner + ", not " + oldOwner);
-//    }
+    assert oldOwner == owner : this + ": Permit owned by " + owner + ", not " + oldOwner;
 
     owner = null;
     if (!waiting.isEmpty()) {
@@ -45,12 +43,11 @@ public class BinarySemaphore {
   }
 
   public void fixNextOwner(XWorker nextOwner) {
-//    if (this.nextOwner != null) {
-//      throw new IllegalStateException(this + ": Next owner has already been " + "fixed to " + nextOwner);
-//    }
+    assert this.nextOwner == null :
+            this + ": Next owner has already been " + "fixed to " + nextOwner;
 
     this.nextOwner = nextOwner;
-//    Log.info(this, "fixNextOwner", nextOwner);
+    assert Log.info(this, "fixNextOwner", nextOwner);
   }
 
   public String toString() {

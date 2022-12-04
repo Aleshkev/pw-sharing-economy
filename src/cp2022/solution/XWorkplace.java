@@ -9,8 +9,8 @@ class XWorkplace {
 
   public XWorkplace(Workplace workplace) {
     this.workplace = workplace;
-    usePermit = new BinarySemaphore(workplace.getId().toString().replaceAll(
-            "^wId\\((.*)\\)$", "$1") + ".use");
+    usePermit = new BinarySemaphore(workplace.getId().toString().replaceAll("^wId\\((.*)\\)$",
+                                                                            "$1") + ".use");
   }
 
   public WorkplaceId getId() {
@@ -31,12 +31,10 @@ class XWorkplace {
 
   @Override
   public String toString() {
-    return Log.YELLOW + "[" + getId().toString().replace("wId(", "").replace(
-            ")", "") + ']' + Log.RESET;
+    return Log.YELLOW + "[" + getId().toString().replace("wId(", "").replace(")", "") + ']' + Log.RESET;
   }
 
   public String getDetailedString() {
-    return Log.YELLOW + "workplace " + this + Log.YELLOW + " \"" + getId() +
-            "\"" + "\n" + Log.YELLOW + "  use permit  = " + usePermit + "\n";
+    return Log.YELLOW + "workplace " + this + Log.YELLOW + " \"" + getId() + "\"" + "\n" + Log.YELLOW + "  use permit  = " + usePermit + "\n";
   }
 }

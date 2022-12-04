@@ -37,9 +37,8 @@ class XWorker {
   }
 
   public String getDetailedString() {
-    return Log.GREEN + "worker " + this + Log.GREEN + " \"" + name + "\"" +
-            "\n" + Log.GREEN + "  current workplace = " + currentWorkplace +
-            "\n" + Log.GREEN + "  awaited workplace = " + awaitedWorkplace +
-            "\n";
+    return Log.GREEN + "worker " + this + Log.GREEN + " \"" + name + "\"" + "\n" + Log.GREEN + " " +
+            " current workplace = " + currentWorkplace + "\n" + Log.GREEN + "  awaited workplace " +
+            "= " + awaitedWorkplace + "\n";
   }
 }
