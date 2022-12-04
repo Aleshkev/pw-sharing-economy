@@ -3,8 +3,7 @@ package cp2022.solution;
 import java.util.ArrayList;
 import java.util.List;
 
-// A custom implementation of a binary semaphore. Assumes the threads work in
-// monitor-like fashion.
+// A custom implementation of a binary semaphore. Assumes the threads work in  monitor-like fashion.
 // Has a special operation to fix who will get the permit next.
 public class BinarySemaphore {
   private final List<XWorker> waiting = new ArrayList<>();
@@ -32,15 +31,15 @@ public class BinarySemaphore {
 
   public void release(XWorker oldOwner) {
     if (oldOwner != owner) {
-      throw new IllegalStateException(this + ": Permit owned by " + owner +
-                                              ", not " + oldOwner);
+      throw new IllegalStateException(this + ": Permit owned by " + owner + ", not " + oldOwner);
     }
 
     owner = null;
     if (!waiting.isEmpty()) {
-      waiting.get(0).wakeup.signal();
       if (nextOwner != null) {
         nextOwner.wakeup.signal();
+      } else {
+        waiting.get(0).wakeup.signal();
       }
     }
   }
@@ -55,6 +54,7 @@ public class BinarySemaphore {
   }
 
   public String toString() {
-    return Log.BLUE + "[" + name + " (→" + nextOwner + Log.BLUE + ") " + owner + Log.BLUE + " :: " + waiting + Log.BLUE + "]" + Log.RESET;
+    return Log.BLUE + "[" + name + " (→" + nextOwner + Log.BLUE + ") " + owner + Log.BLUE + " :: "
+            + waiting + Log.BLUE + "]" + Log.RESET;
   }
 }
