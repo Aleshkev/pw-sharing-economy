@@ -21,7 +21,7 @@ class XWorkshop implements Workshop {
     metasemaphore = new Metasemaphore();
 
     mostRecentlyCreatedInstance = this;
-    DeadlockDetection.startIfEnabled();
+//    DeadlockDetection.startIfEnabled();
   }
 
   public ReentrantLock getLock() {
@@ -36,26 +36,26 @@ class XWorkshop implements Workshop {
                                                                           Thread.currentThread().getName()));
     var newWorkplace = workplaces.get(newWorkplaceId);
 
-    Log.info(worker, "enter.begin", newWorkplaceId);
+//    Log.info(worker, "enter.begin", newWorkplaceId);
 
     metasemaphore.startWaiting(worker, 2 * workplaces.size() - 1);
 
-    Log.info(worker, "enter.acquireEntryPermit", newWorkplace, metasemaphore);
+//    Log.info(worker, "enter.acquireEntryPermit", newWorkplace, metasemaphore);
     InterruptableAction.run(() -> metasemaphore.acquirePermit(worker));
 
-    Log.info(worker, "enter.acquireUsePermit", newWorkplace.usePermit);
+//    Log.info(worker, "enter.acquireUsePermit", newWorkplace.usePermit);
     worker.setAwaitedWorkplace(newWorkplace);
     InterruptableAction.run(() -> newWorkplace.acquireUsePermit(worker));
     worker.setAwaitedWorkplace(null);
     worker.setCurrentWorkplace(newWorkplace);
 
-    Log.info(worker, "enter.end", newWorkplace);
+//    Log.info(worker, "enter.end", newWorkplace);
     return new DelayUntilUse(newWorkplace.getWorkplace(), () -> {
-      Log.info(worker, "enter-delayed.begin", newWorkplace);
+//      Log.info(worker, "enter-delayed.begin", newWorkplace);
 
       metasemaphore.stopWaiting(worker);
 
-      Log.info(worker, "enter-delayed.end", newWorkplace);
+//      Log.info(worker, "enter-delayed.end", newWorkplace);
       lock.unlock();
     });
   }
@@ -69,7 +69,7 @@ class XWorkshop implements Workshop {
     var newWorkplace = workplaces.get(newWorkplaceId);
     assert newWorkplace != null;
 
-    Log.info(worker, "switchTo.begin", oldWorkplace, "→", newWorkplace);
+//    Log.info(worker, "switchTo.begin", oldWorkplace, "→", newWorkplace);
 
     // Can't do anything else.
     if (oldWorkplace == newWorkplace) {
@@ -88,27 +88,27 @@ class XWorkshop implements Workshop {
 
     worker.setAwaitedWorkplace(newWorkplace);
     if (!isSolvingCycle) {
-      Log.info(worker, "switchTo.acquireUsePermit", "not solving a cycle", newWorkplace.usePermit);
+//      Log.info(worker, "switchTo.acquireUsePermit", "not solving a cycle", newWorkplace.usePermit);
       InterruptableAction.run(() -> newWorkplace.acquireUsePermit(worker));
     }
     worker.setAwaitedWorkplace(null);
     worker.setCurrentWorkplace(newWorkplace);
 
-    Log.info(worker, "switchTo.end", newWorkplace);
+//    Log.info(worker, "switchTo.end", newWorkplace);
     return new DelayUntilUse(newWorkplace.getWorkplace(), () -> {
-      Log.info(worker, "switchTo-delayed.begin");
+//      Log.info(worker, "switchTo-delayed.begin");
 
       metasemaphore.stopWaiting(worker);
-      Log.info(worker, "switchTo-delayed.releaseOldUsePermit", oldWorkplace.usePermit);
+//      Log.info(worker, "switchTo-delayed.releaseOldUsePermit", oldWorkplace.usePermit);
       oldWorkplace.releaseUsePermit(worker);
 
       if (isSolvingCycle) {
-        Log.info(worker, "switchTo-delayed.acquireUsePermit", "was solving a cycle",
-                 newWorkplace.usePermit);
+//        Log.info(worker, "switchTo-delayed.acquireUsePermit", "was solving a cycle",
+//                 newWorkplace.usePermit);
         InterruptableAction.run(() -> newWorkplace.acquireUsePermit(worker));
       }
 
-      Log.info(worker, "switchTo-delayed.end");
+//      Log.info(worker, "switchTo-delayed.end");
       lock.unlock();
     });
   }
@@ -136,8 +136,8 @@ class XWorkshop implements Workshop {
   private void handleCycle(XWorker worker, XWorkplace oldWorkplace, XWorkplace newWorkplace,
                            List<XWorkplace> cycle) {
     assert cycle != null;
-    Log.info(worker, Log.RED + "handleCycle" + Log.RESET, "cycle =", oldWorkplace, "→", cycle,
-             "→", oldWorkplace);
+//    Log.info(worker, Log.RED + "handleCycle" + Log.RESET, "cycle =", oldWorkplace, "→", cycle,
+//             "→", oldWorkplace);
 
     for (var i = 0; i < cycle.size(); ++i) {
       cycle.get(i).usePermit.fixNextOwner(i == 0 ? worker : cycle.get(i - 1).usePermit.getOwner());
@@ -151,12 +151,12 @@ class XWorkshop implements Workshop {
     var worker = workers.get(getWorkerId());
     var oldWorkplace = worker.getCurrentWorkplace();
 
-    Log.info(worker, "leave.begin");
+//    Log.info(worker, "leave.begin");
 
     oldWorkplace.releaseUsePermit(worker);
     worker.setCurrentWorkplace(null);
 
-    Log.info(worker, "leave.end");
+//    Log.info(worker, "leave.end");
     lock.unlock();
   }
 

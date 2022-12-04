@@ -11,19 +11,19 @@ class Log {
   public static final String PURPLE = "\u001B[35m";
   public static final String CYAN = "\u001B[36m";
 
-  public static synchronized void info(Object source, String path, Object... s) {
-    DeadlockDetection.somethingHappened();
-
-    if (!isEnabled) {
-      return;
-    }
-    var start = GREEN + "(" + Thread.currentThread().getId() + ")." + RESET + path + ": ";
-    var string = new StringBuilder().append(start).append(" ".repeat(Math.max(0,
-                                                                              40 - start.length())));
-    for (var o : s) {
-      string.append(o).append(" ");
-    }
-    string.append(" in ").append(source);
-    System.out.println(string);
-  }
+//  public static synchronized void info(Object source, String path, Object... s) {
+//    DeadlockDetection.somethingHappened();
+//
+//    if (!isEnabled) {
+//      return;
+//    }
+//    var start = GREEN + "(" + Thread.currentThread().getId() + ")." + RESET + path + ": ";
+//    var string = new StringBuilder().append(start).append(" ".repeat(Math.max(0,
+//                                                                              40 - start.length())));
+//    for (var o : s) {
+//      string.append(o).append(" ");
+//    }
+//    string.append(" in ").append(source);
+//    System.out.println(string);
+//  }
 }

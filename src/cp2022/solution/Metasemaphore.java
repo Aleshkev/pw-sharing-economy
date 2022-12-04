@@ -17,20 +17,20 @@ class Metasemaphore {
   // At most n permits will be given out before stopWaiting() is called by
   // the thread.
   public void startWaiting(XWorker worker, int n) {
-    if (n <= 0) {
-      throw new IllegalArgumentException("Invalid limit");
-    }
-    if (timeOfLimit.get(worker) != null) {
-      throw new IllegalStateException("The worker was already waiting");
-    }
+//    if (n <= 0) {
+//      throw new IllegalArgumentException("Invalid limit");
+//    }
+//    if (timeOfLimit.get(worker) != null) {
+//      throw new IllegalStateException("The worker was already waiting");
+//    }
 
-    Log.info(this, "startWaiting.begin");
+//    Log.info(this, "startWaiting.begin");
 
     timeOfLimit.put(worker, time);
     limits.put(time, n);
     ++time;
 
-    Log.info(this, "startWaiting.end");
+//    Log.info(this, "startWaiting.end");
   }
 
   public void acquirePermit(XWorker worker) throws InterruptedException {
@@ -38,7 +38,7 @@ class Metasemaphore {
       throw new IllegalStateException("A thread must be waiting to acquire a permit");
     }
 
-    Log.info(this, "acquirePermit/begin");
+//    Log.info(this, "acquirePermit/begin");
 
     ++time;
     waitingToAcquire.add(worker);
@@ -50,15 +50,15 @@ class Metasemaphore {
     waitingToAcquire.remove(worker);
     limits.replaceAll((a, b) -> a < timeOfLimit.get(worker) ? b - 1 : b);
 
-    Log.info(this, "acquirePermit.end");
+//    Log.info(this, "acquirePermit.end");
   }
 
   public void stopWaiting(XWorker worker) {
-    if (!timeOfLimit.containsKey(worker)) {
-      throw new IllegalStateException("The worker was not waiting");
-    }
+//    if (!timeOfLimit.containsKey(worker)) {
+//      throw new IllegalStateException("The worker was not waiting");
+//    }
 
-    Log.info(this, "stopWaiting.begin");
+//    Log.info(this, "stopWaiting.begin");
 
     limits.remove(timeOfLimit.get(worker));
     timeOfLimit.remove(worker);
@@ -68,7 +68,7 @@ class Metasemaphore {
       waitingToAcquire.get(0).wakeup.signal();
     }
 
-    Log.info(this, "stopWaiting.end");
+//    Log.info(this, "stopWaiting.end");
   }
 
   private boolean canAcquirePermit(int whenStartedWaiting) {
