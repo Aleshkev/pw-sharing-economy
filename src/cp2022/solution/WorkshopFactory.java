@@ -12,14 +12,8 @@ import cp2022.base.Workshop;
 
 import java.util.Collection;
 
-
 public final class WorkshopFactory {
-
   public static Workshop newWorkshop(Collection<Workplace> workplaces) {
-    if (Log.printingEnabled)
-      return new WorkshopVisualizer(new XWorkshop(workplaces));
-    else
-      return new XWorkshop(workplaces);
+    return new XWorkshop(workplaces);
   }
-
 }

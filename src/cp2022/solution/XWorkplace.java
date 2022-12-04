@@ -3,18 +3,14 @@ package cp2022.solution;
 import cp2022.base.Workplace;
 import cp2022.base.WorkplaceId;
 
-public class XWorkplace {
-  //  public final List<XWorker> workers = new ArrayList<>();
-  public final BinarySemaphore movePermit;
+class XWorkplace {
   public final BinarySemaphore usePermit;
-  private final XWorkshop workshop;
-  private final Workplace workplace;
+  public final Workplace workplace;
 
-  public XWorkplace(XWorkshop workshop, Workplace workplace) {
-    this.workshop = workshop;
+  public XWorkplace(Workplace workplace) {
     this.workplace = workplace;
-    movePermit = new BinarySemaphore(workplace.getId().toString().replaceAll("^wId\\((.*)\\)$", "$1") + ".move");
-    usePermit = new BinarySemaphore(workplace.getId().toString().replaceAll("^wId\\((.*)\\)$", "$1") + ".use");
+    usePermit = new BinarySemaphore(workplace.getId().toString().replaceAll(
+            "^wId\\((.*)\\)$", "$1") + ".use");
   }
 
   public WorkplaceId getId() {
@@ -35,13 +31,12 @@ public class XWorkplace {
 
   @Override
   public String toString() {
-    return Log.YELLOW + "[" + getId().toString().replace("wId(", "").replace(")", "") +
-            ']' + Log.RESET;
+    return Log.YELLOW + "[" + getId().toString().replace("wId(", "").replace(
+            ")", "") + ']' + Log.RESET;
   }
 
-  public String getTrace() {
-    return Log.YELLOW + "workplace " + this + Log.YELLOW + " \"" + getId() + "\"" + "\n" +
-            Log.YELLOW + "  move permit = " + movePermit + "\n" +
-            Log.YELLOW + "  use permit  = " + usePermit + "\n";
+  public String getDetailedString() {
+    return Log.YELLOW + "workplace " + this + Log.YELLOW + " \"" + getId() +
+            "\"" + "\n" + Log.YELLOW + "  use permit  = " + usePermit + "\n";
   }
 }

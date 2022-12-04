@@ -2,15 +2,15 @@ package cp2022.solution;
 
 import java.util.concurrent.locks.Condition;
 
-public class XWorker {
+class XWorker {
   private final long id;
   private final String name;
-  public Condition sleep;
+  public Condition wakeup;  // Used whenever we need to wake a specific thread.
   private XWorkplace currentWorkplace = null;
   private XWorkplace awaitedWorkplace = null;
 
   public XWorker(XWorkshop workshop, long id, String name) {
-    this.sleep = workshop.getLock().newCondition();
+    this.wakeup = workshop.getLock().newCondition();
     this.id = id;
     this.name = name;
   }
@@ -36,9 +36,10 @@ public class XWorker {
     return Log.GREEN + "(" + id + ")" + Log.RESET;
   }
 
-  public String getTrace() {
-    return Log.GREEN + "worker " + this + Log.GREEN + " \"" + name + "\"" + "\n" +
-            Log.GREEN + "  current workplace = " + currentWorkplace + "\n" +
-            Log.GREEN + "  awaited workplace = " + awaitedWorkplace + "\n";
+  public String getDetailedString() {
+    return Log.GREEN + "worker " + this + Log.GREEN + " \"" + name + "\"" +
+            "\n" + Log.GREEN + "  current workplace = " + currentWorkplace +
+            "\n" + Log.GREEN + "  awaited workplace = " + awaitedWorkplace +
+            "\n";
   }
 }

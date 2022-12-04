@@ -3,7 +3,8 @@ package cp2022.solution;
 import java.util.ArrayList;
 import java.util.List;
 
-// A custom implementation of a binary semaphore. Assumes the threads work in monitor-like fashion.
+// A custom implementation of a binary semaphore. Assumes the threads work in
+// monitor-like fashion.
 // Has a special operation to fix who will get the permit next.
 public class BinarySemaphore {
   private final List<XWorker> waiting = new ArrayList<>();
@@ -22,7 +23,7 @@ public class BinarySemaphore {
   public void acquire(XWorker worker) throws InterruptedException {
     waiting.add(worker);
     while (owner != null || (nextOwner != null && worker != nextOwner)) {
-      worker.sleep.await();
+      worker.wakeup.await();
     }
     waiting.remove(worker);
     owner = worker;
@@ -30,19 +31,24 @@ public class BinarySemaphore {
   }
 
   public void release(XWorker oldOwner) {
-    if (oldOwner != owner)
-      throw new IllegalStateException(this + ": Permit owned by " + owner + ", not " + oldOwner);
+    if (oldOwner != owner) {
+      throw new IllegalStateException(this + ": Permit owned by " + owner +
+                                              ", not " + oldOwner);
+    }
 
     owner = null;
     if (!waiting.isEmpty()) {
-      waiting.get(0).sleep.signal();
-      if (nextOwner != null) nextOwner.sleep.signal();
+      waiting.get(0).wakeup.signal();
+      if (nextOwner != null) {
+        nextOwner.wakeup.signal();
+      }
     }
   }
 
   public void fixNextOwner(XWorker nextOwner) {
-    if (this.nextOwner != null)
-      throw new IllegalStateException(this + ": Next owner has already been fixed to " + nextOwner);
+    if (this.nextOwner != null) {
+      throw new IllegalStateException(this + ": Next owner has already been " + "fixed to " + nextOwner);
+    }
 
     this.nextOwner = nextOwner;
     Log.info(this, "fixNextOwner", nextOwner);
