@@ -1,12 +1,18 @@
 package cp2022.solution;
 
+import java.util.concurrent.locks.Condition;
+
 public class XWorker {
   private final long id;
+  private final String name;
+  public Condition sleep;
   private XWorkplace currentWorkplace = null;
   private XWorkplace awaitedWorkplace = null;
 
-  public XWorker(long id) {
+  public XWorker(XWorkshop workshop, long id, String name) {
+    this.sleep = workshop.getLock().newCondition();
     this.id = id;
+    this.name = name;
   }
 
   public XWorkplace getCurrentWorkplace() {
@@ -25,26 +31,14 @@ public class XWorker {
     this.awaitedWorkplace = awaitedWorkplace;
   }
 
-  public long getId() {
-    return id;
-  }
-
   @Override
   public String toString() {
-    return  Log.GREEN + "(" + id + ")" + Log.RESET;
-//    return "XWorker[" +
-//            "id=" + id +
-//            ", currentWorkplace=" + currentWorkplace +
-//            ", awaitedWorkplace=" + awaitedWorkplace +
-//            ']';
+    return Log.GREEN + "(" + id + ")" + Log.RESET;
   }
 
-  public void trace() {
-    System.out.println("XWorker[" +
-            "id=" + id +
-            ", currentWorkplace=" + currentWorkplace +
-            ", awaitedWorkplace=" + awaitedWorkplace +
-            "]"
-    );
+  public String getTrace() {
+    return Log.GREEN + "worker " + this + Log.GREEN + " \"" + name + "\"" + "\n" +
+            Log.GREEN + "  current workplace = " + currentWorkplace + "\n" +
+            Log.GREEN + "  awaited workplace = " + awaitedWorkplace + "\n";
   }
 }

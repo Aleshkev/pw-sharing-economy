@@ -4,16 +4,17 @@ import cp2022.base.Workplace;
 import cp2022.base.WorkplaceId;
 
 public class XWorkplace {
+  //  public final List<XWorker> workers = new ArrayList<>();
+  public final BinarySemaphore movePermit;
+  public final BinarySemaphore usePermit;
   private final XWorkshop workshop;
   private final Workplace workplace;
-  private final BinarySemaphore<XWorker> movePermit;
-  private final BinarySemaphore<XWorker> usePermit;
 
   public XWorkplace(XWorkshop workshop, Workplace workplace) {
     this.workshop = workshop;
     this.workplace = workplace;
-    movePermit = new BinarySemaphore<>(workshop, workplace.getId() + "/move");
-    usePermit = new BinarySemaphore<>(workshop, workplace.getId() + "/use");
+    movePermit = new BinarySemaphore(workplace.getId().toString().replaceAll("^wId\\((.*)\\)$", "$1") + ".move");
+    usePermit = new BinarySemaphore(workplace.getId().toString().replaceAll("^wId\\((.*)\\)$", "$1") + ".use");
   }
 
   public WorkplaceId getId() {
@@ -22,14 +23,6 @@ public class XWorkplace {
 
   public Workplace getWorkplace() {
     return workplace;
-  }
-
-  public void acquireMovePermit(XWorker worker) throws InterruptedException {
-    movePermit.acquire(worker);
-  }
-
-  public void releaseMovePermit(XWorker worker) {
-    movePermit.release(worker);
   }
 
   public void acquireUsePermit(XWorker worker) throws InterruptedException {
@@ -42,16 +35,13 @@ public class XWorkplace {
 
   @Override
   public String toString() {
-    return Log.YELLOW + "[" +
-            "id=" + getId() +
-            ", " + movePermit + Log.YELLOW +
-            ", " + usePermit + Log.YELLOW +
+    return Log.YELLOW + "[" + getId().toString().replace("wId(", "").replace(")", "") +
             ']' + Log.RESET;
   }
 
-  public void trace() {
-    System.out.println(toString());
-    System.out.println("    " + movePermit);
-    System.out.println("    " + usePermit);
+  public String getTrace() {
+    return Log.YELLOW + "workplace " + this + Log.YELLOW + " \"" + getId() + "\"" + "\n" +
+            Log.YELLOW + "  move permit = " + movePermit + "\n" +
+            Log.YELLOW + "  use permit  = " + usePermit + "\n";
   }
 }

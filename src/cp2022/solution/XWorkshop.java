@@ -4,14 +4,12 @@ import cp2022.base.Workplace;
 import cp2022.base.WorkplaceId;
 import cp2022.base.Workshop;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 
-public class XWorkshop implements Workshop {
+class XWorkshop implements Workshop {
   static XWorkshop mostRecentlyCreatedInstance;
 
   private final ReentrantLock lock = new ReentrantLock(true);
@@ -30,42 +28,38 @@ public class XWorkshop implements Workshop {
     return lock;
   }
 
-  private void catchInterrupts(InterruptableAction f) {
-    try {
-      f.run();
-    } catch (InterruptedException e) {
-      throw new RuntimeException("panic: unexpected thread interruption");
-    }
-  }
-
   @Override
   public Workplace enter(WorkplaceId newWorkplaceId) {
     lock.lock();
 
-    var worker = workers.computeIfAbsent(getWorkerId(), XWorker::new);
+    var worker = workers.computeIfAbsent(getWorkerId(), id -> new XWorker(this, id, Thread.currentThread().getName()));
     var newWorkplace = workplaces.get(newWorkplaceId);
+
     Log.info(worker, "enter.begin", newWorkplaceId);
 
-    metasemaphore.startWaiting(2 * workplaces.size() - 1);
+    metasemaphore.startWaiting(worker, 2 * workplaces.size() - 1);
 
-    Log.info(worker, "enter.acquireEntryPermit", newWorkplace);
-    catchInterrupts(() -> metasemaphore.acquirePermit());
+    Log.info(worker, "enter.acquireEntryPermit", newWorkplace, metasemaphore);
 
-    Log.info(worker, "enter.acquireMovePermit", newWorkplace);
+    InterruptableAction.run(() -> metasemaphore.acquirePermit(worker));
+
+    Log.info(worker, "enter.acquireUsePermit", newWorkplace.usePermit);
+
     worker.setAwaitedWorkplace(newWorkplace);
-    catchInterrupts(() -> newWorkplace.acquireMovePermit(worker));
+    InterruptableAction.run(() -> newWorkplace.acquireUsePermit(worker));
+    worker.setAwaitedWorkplace(null);
     worker.setCurrentWorkplace(newWorkplace);
 
     Log.info(worker, "enter.end", newWorkplace);
-    return new DelayUntilUse(newWorkplace.getWorkplace(), () -> {
-      Log.info(worker, "enter-delayed.begin", newWorkplace);
-      metasemaphore.stopWaiting();
 
-      Log.info(worker, "enter-delayed.acquireUsePermit", newWorkplace);
-      catchInterrupts(() -> newWorkplace.acquireUsePermit(worker));
-      worker.setAwaitedWorkplace(null);
+    return new DelayUntilUse(newWorkplace.getWorkplace(), () -> {
+
+      Log.info(worker, "enter-delayed.begin", newWorkplace);
+
+      metasemaphore.stopWaiting(worker);
 
       Log.info(worker, "enter-delayed.end", newWorkplace);
+
       lock.unlock();
     });
   }
@@ -77,32 +71,63 @@ public class XWorkshop implements Workshop {
     var worker = workers.get(getWorkerId());
     var oldWorkplace = worker.getCurrentWorkplace();
     var newWorkplace = workplaces.get(newWorkplaceId);
-    Log.info(worker, "switchTo.begin", newWorkplaceId);
+    assert newWorkplace != null;
+
+    Log.info(worker, "switchTo.begin", oldWorkplace, "→", newWorkplace);
 
     if (oldWorkplace == newWorkplace) {
       lock.unlock();
       return newWorkplace.getWorkplace();
     }
 
-    oldWorkplace.releaseMovePermit(worker);
+    var maybeCycle = new ArrayList<XWorkplace>();
 
-    metasemaphore.startWaiting(2 * workplaces.size() - 1);
+    var node = newWorkplace;
+    while (node != null && node != oldWorkplace) {
+      if (node.usePermit.getOwner() == null || node.usePermit.getOwner().getAwaitedWorkplace() == null)
+        break;
+      maybeCycle.add(node);
+      node = node.usePermit.getOwner().getAwaitedWorkplace();
+    }
+    boolean isSolvingCycle;
+    if (node == oldWorkplace) {
+      isSolvingCycle = true;
+      var cycle = maybeCycle;
 
-    Log.info(worker, "enter.begin.acquireMovePermit", newWorkplace);
+      Log.info(worker, Log.RED + "switchTo.solveCycle" + Log.RESET, "cycle =", oldWorkplace, "→", cycle, "→", oldWorkplace);
+
+      for (var i = 0; i < cycle.size(); ++i) {
+        cycle.get(i).usePermit.fixNextOwner(i == 0 ? worker : cycle.get(i - 1).usePermit.getOwner());
+      }
+      oldWorkplace.usePermit.fixNextOwner(cycle.get(cycle.size() - 1).usePermit.getOwner());
+    } else {
+      isSolvingCycle = false;
+    }
+
+
+    metasemaphore.startWaiting(worker, 2 * workplaces.size() - 1);
+
     worker.setAwaitedWorkplace(newWorkplace);
-    catchInterrupts(() -> newWorkplace.acquireMovePermit(worker));
+    if (!isSolvingCycle) {
+      Log.info(worker, "switchTo.acquireUsePermit", "not solving a cycle", newWorkplace.usePermit);
+      InterruptableAction.run(() -> newWorkplace.acquireUsePermit(worker));
+    }
+    worker.setAwaitedWorkplace(null);
     worker.setCurrentWorkplace(newWorkplace);
 
     Log.info(worker, "switchTo.end", newWorkplace);
     return new DelayUntilUse(newWorkplace.getWorkplace(), () -> {
       Log.info(worker, "switchTo-delayed.begin");
 
-      metasemaphore.stopWaiting();
+      metasemaphore.stopWaiting(worker);
+      Log.info(worker, "switchTo-delayed.releaseOldUsePermit", oldWorkplace.usePermit);
       oldWorkplace.releaseUsePermit(worker);
 
-      Log.info(worker, "switchTo-delayed.acquireWorkPermit");
-      catchInterrupts(() -> newWorkplace.acquireUsePermit(worker));
-      worker.setAwaitedWorkplace(null);
+      if (isSolvingCycle) {
+        Log.info(worker, "switchTo-delayed.acquireUsePermit", "was solving a cycle", newWorkplace.usePermit);
+        InterruptableAction.run(() -> newWorkplace.acquireUsePermit(worker));
+      }
+
 
       Log.info(worker, "switchTo-delayed.end");
       lock.unlock();
@@ -117,7 +142,6 @@ public class XWorkshop implements Workshop {
 
     Log.info(worker, "leave.begin");
 
-    oldWorkplace.releaseMovePermit(worker);
     oldWorkplace.releaseUsePermit(worker);
     worker.setCurrentWorkplace(null);
 
@@ -130,22 +154,16 @@ public class XWorkshop implements Workshop {
     return "Workshop[]";
   }
 
-  public void trace() {
-    System.err.print(Log.RED);
-    for (var w : workplaces.values()) {
-      w.trace();
-    }
-    for (var w : workers.values()) {
-      w.trace();
-    }
-    System.err.print(Log.RESET);
+  public String getTrace() {
+    var s = new StringJoiner("");
+    workplaces.values().forEach(x -> s.add(x.getTrace()));
+    workers.values().forEach(x -> s.add(x.getTrace()));
+    s.add(metasemaphore.getTrace());
+    return s.toString();
   }
 
   private long getWorkerId() {
     return Thread.currentThread().getId();
   }
 
-  private interface InterruptableAction {
-    void run() throws InterruptedException;
-  }
 }

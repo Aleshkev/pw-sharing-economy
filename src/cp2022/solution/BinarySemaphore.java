@@ -2,50 +2,53 @@ package cp2022.solution;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.locks.Condition;
 
-public class BinarySemaphore<T> {
-
-  private final Condition isEmpty;
-  private final List<T> waiting = new ArrayList<>();
+// A custom implementation of a binary semaphore. Assumes the threads work in monitor-like fashion.
+// Has a special operation to fix who will get the permit next.
+public class BinarySemaphore {
+  private final List<XWorker> waiting = new ArrayList<>();
   private final String name;
-  private XWorkshop workshop;
-  private T owner = null;
+  private XWorker owner = null;
+  private XWorker nextOwner = null;
 
-  public BinarySemaphore(XWorkshop workshop, String name) {
-    this.workshop = workshop;
+  public BinarySemaphore(String name) {
     this.name = name;
-    isEmpty = workshop.getLock().newCondition();
   }
 
-  public void acquire(T newOwner) throws InterruptedException {
-    waiting.add(newOwner);
-    while (owner != null) {
-//      System.out.println("thread " + newOwner + " starts waiting on " + this);
-//      if (isEmpty.await(1, TimeUnit.SECONDS))
-      workshop.getLock().unlock();
-      Thread.sleep(1);
-      workshop.getLock().lock();
-//      System.out.println("thread " + newOwner + " notified by " + this);
+  public XWorker getOwner() {
+    return owner;
+  }
+
+  public void acquire(XWorker worker) throws InterruptedException {
+    waiting.add(worker);
+    while (owner != null || (nextOwner != null && worker != nextOwner)) {
+      worker.sleep.await();
     }
-    waiting.remove(newOwner);
-    owner = newOwner;
+    waiting.remove(worker);
+    owner = worker;
+    nextOwner = null;
   }
 
-  public void release(T oldOwner) {
+  public void release(XWorker oldOwner) {
     if (oldOwner != owner)
-      throw new IllegalStateException("Permit for \"" + name + "\" owned by " + owner + ", not " + oldOwner);
+      throw new IllegalStateException(this + ": Permit owned by " + owner + ", not " + oldOwner);
+
     owner = null;
-//    System.out.println("notifiy all by " + this);
-    isEmpty.signalAll();
+    if (!waiting.isEmpty()) {
+      waiting.get(0).sleep.signal();
+      if (nextOwner != null) nextOwner.sleep.signal();
+    }
   }
 
-  public void fixNextOwner(T nextOwner) {
+  public void fixNextOwner(XWorker nextOwner) {
+    if (this.nextOwner != null)
+      throw new IllegalStateException(this + ": Next owner has already been fixed to " + nextOwner);
 
+    this.nextOwner = nextOwner;
+    Log.info(this, "fixNextOwner", nextOwner);
   }
 
   public String toString() {
-    return Log.BLUE + "BinSem[\"" + name + "\", " +
-            owner + Log.BLUE + "... " + waiting + Log.BLUE + "]" + Log.RESET;
+    return Log.BLUE + "[" + name + " (→" + nextOwner + Log.BLUE + ") " + owner + Log.BLUE + " :: " + waiting + Log.BLUE + "]" + Log.RESET;
   }
 }
